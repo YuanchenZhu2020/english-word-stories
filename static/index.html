@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>词源奇旅 / English Word Stories</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-badge">EW</div>
+          <div>
+            <h1>词源奇旅</h1>
+            <p>English Word Stories</p>
+          </div>
+        </div>
+
+        <section class="panel recent-panel">
+          <div class="panel-header">
+            <h2>最近归档</h2>
+            <button id="refresh-archives" class="ghost-button">刷新</button>
+          </div>
+          <div id="recent-archives" class="recent-list"></div>
+        </section>
+      </aside>
+
+      <main class="main">
+        <section class="hero panel">
+          <div class="hero-copy">
+            <span class="eyebrow">DeepAgents · Skill-first word mastery</span>
+            <h2>看见词的源头，也看见它今天为什么这样活着。</h2>
+            <p>输入一个英文单词，优先命中缓存；无缓存时再调用 DeepAgent 生成并自动归档。</p>
+          </div>
+
+          <form id="query-form" class="query-form">
+            <label>
+              <span>英文单词</span>
+              <input id="word-input" name="word" type="text" placeholder="例如：serendipity" required />
+            </label>
+
+            <label>
+              <span>模型</span>
+              <input id="model-input" name="model" type="text" placeholder="anthropic:claude-sonnet-4-6" />
+            </label>
+
+            <label class="toggle">
+              <input id="force-refresh" name="force_refresh" type="checkbox" />
+              <span>忽略缓存，强制重新生成</span>
+            </label>
+
+            <div class="actions">
+              <button id="submit-button" type="submit">开始解析</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel meta-panel">
+          <div class="meta-grid">
+            <div>
+              <span class="meta-label">使用模型</span>
+              <strong id="meta-model">—</strong>
+            </div>
+            <div>
+              <span class="meta-label">生成时间</span>
+              <strong id="meta-created-at">—</strong>
+            </div>
+            <div>
+              <span class="meta-label">缓存状态</span>
+              <strong id="meta-cache">—</strong>
+            </div>
+            <div>
+              <span class="meta-label">归档路径</span>
+              <strong id="meta-archive">—</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel result-panel">
+          <div class="panel-header">
+            <h2 id="result-title">等待查询</h2>
+            <span id="status-chip" class="status-chip idle">Ready</span>
+          </div>
+          <div id="error-box" class="error-box hidden"></div>
+          <article id="result-content" class="result-content empty">
+            <p>输入一个单词开始。归档与缓存信息会显示在上方，正文会在这里呈现。</p>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+  </html>

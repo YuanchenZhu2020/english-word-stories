@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Implementation Notes - 词源奇旅 / English Word Stories</title>
+    <style>
+      :root {
+        --bg: #f7f4ef;
+        --panel: #fffdf9;
+        --border: #e7dfd2;
+        --text: #2b241d;
+        --muted: #6f6254;
+        --accent: #8b5e2b;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.7;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+      .hero, .section {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 20px;
+      }
+      h1, h2, h3 { margin-top: 0; }
+      h1 { font-size: 32px; }
+      h2 {
+        font-size: 20px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .note {
+        border-left: 4px solid var(--accent);
+        padding-left: 14px;
+        margin: 16px 0;
+      }
+      ul { padding-left: 20px; }
+      li + li { margin-top: 10px; }
+      code {
+        background: #f3ede4;
+        padding: 2px 6px;
+        border-radius: 8px;
+      }
+      .tag {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #f2e8da;
+        color: var(--accent);
+        font-size: 12px;
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <h1>Implementation Notes</h1>
+        <p><strong>项目：</strong>词源奇旅 / English Word Stories</p>
+        <p class="meta">
+          此文件用于持续记录实现如何影响规格，或规格如何影响实现。<br />
+          最近更新：2026-06-27
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>1. 设计决定</h2>
+        <ul>
+          <li><span class="tag">已决定</span><strong>缓存键采用规范化小写单词。</strong> 输入大小写差异不影响缓存命中，展示时再转为首字母大写。</li>
+          <li><span class="tag">已决定</span><strong>归档按单词分目录存储。</strong> 路径形如 <code>archives/&lt;word&gt;/YYYYMMDD-HHMMSS--&lt;word&gt;.md</code>，便于定位最新结果。</li>
+          <li><span class="tag">已决定</span><strong>仅新生成结果写入归档。</strong> 读取缓存不会重复生成新归档文件，避免把“读取”误记成“生成”。</li>
+          <li><span class="tag">已决定</span><strong>UI 采用 Claude 风格气质，而非像素级复刻。</strong> 规格未要求完全仿制，因此当前实现强调简洁、留白、柔和面板与阅读体验。</li>
+          <li><span class="tag">已决定</span><strong>DeepAgent 从工程内 <code>/skills</code> 目录加载 skill。</strong> 这样 skill 与应用代码一起维护。</li>
+          <li><span class="tag">已决定</span><strong>模型连接信息从 <code>.env</code> 读取。</strong> 当前支持 provider 专属变量（如 <code>OPENAI_API_KEY</code>、<code>OPENAI_BASE_URL</code>）以及通用兜底变量（<code>LLM_API_KEY</code>、<code>LLM_BASE_URL</code>）。</li>
+          <li><span class="tag">已决定</span><strong><code>FilesystemBackend</code> 显式设置 <code>virtual_mode=True</code>。</strong> 这样可消除 deepagents 的兼容性 warning，并避免依赖默认值变化带来的路径语义风险。</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>2. 对规格的理解 / 可能偏离点</h2>
+        <ul>
+          <li><span class="tag">规格解释</span><strong>“优先查询存档的最新生成文件”</strong> 被实现为默认直接返回最新归档，并额外提供“强制重新生成”开关。</li>
+          <li><span class="tag">规格解释</span><strong>“metadata、创建时间等元信息”</strong> 当前至少包含应用名、skill、word、display_word、cache_key、model、created_at、duration_ms、archive_filename。</li>
+          <li><span class="tag">可能偏离</span><strong>当前 UI 不是多轮聊天界面。</strong> 它是单词查询工具页，因为规格重点在查询、模型、生成时间与结果展示。</li>
+          <li><span class="tag">可能偏离</span><strong>词源内容质量依赖模型。</strong> 代码已接入 DeepAgent，但最终内容深度受所选模型与 API Key 可用性影响。</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>3. 折衷考量</h2>
+        <ul>
+          <li><span class="tag">方案比较</span><strong>文件归档缓存 vs 数据库缓存。</strong> 当前选文件归档直读，因为需求本身就要求 Markdown 归档，最简单透明。</li>
+          <li><span class="tag">方案比较</span><strong>FastAPI + 静态前端 vs 全栈前端框架。</strong> 当前选更轻的实现，优先完成 agent、缓存、归档主链路。</li>
+          <li><span class="tag">方案比较</span><strong>纯 Markdown vs frontmatter + 正文。</strong> 当前选 frontmatter，既可读又易解析。</li>
+          <li><span class="tag">方案比较</span><strong>固定模型 vs 自定义模型。</strong> 当前允许输入模型字符串，便于开发和试验。</li>
+          <li><span class="tag">方案比较</span><strong>只读 provider 默认环境变量 vs 应用自行封装 .env。</strong> 当前选择在应用侧统一解析环境变量，原因是这样可以支持通用网关变量与 provider 专属变量共存。</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>4. 未决问题</h2>
+        <ul>
+          <li><span class="tag">待确认</span><strong>缓存是否需要有效期？</strong> 目前永久有效。</li>
+          <li><span class="tag">待确认</span><strong>是否需要归档详情页 / 下载 Markdown？</strong> 当前只显示归档路径。</li>
+          <li><span class="tag">待确认</span><strong>是否需要流式输出？</strong> 当前为一次性返回，更像工具页而非 Claude 实时生成体验。</li>
+          <li><span class="tag">待确认</span><strong>模型输入是否应改为固定选项？</strong> 当前是自由文本。</li>
+          <li><span class="tag">待确认</span><strong>是否需要更严格 HTML 安全清洗？</strong> 如果未来公网部署，建议补 sanitizer。</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>5. 实现变更记录</h2>
+        <ul>
+          <li>
+            <span class="tag">2026-06-27</span>
+            <strong>修正 Markdown 渲染路径。</strong>
+            之前实现会先对 Markdown 全量 HTML 转义，再交给 Markdown 渲染器，导致标题、列表、引用无法按预期显示。
+            现已改为直接渲染 Markdown。此改动提升了结果展示正确性，但也意味着若将来面向不可信输入，需补 HTML 清洗。
+          </li>
+          <li>
+            <span class="tag">2026-06-27</span>
+            <strong>新增 .env 可配置 API Key 与 API 端点。</strong>
+            目前实现支持通用变量 <code>LLM_API_KEY</code>、<code>LLM_BASE_URL</code>，以及 provider 专属变量如
+            <code>OPENAI_API_KEY</code>、<code>OPENAI_BASE_URL</code>、<code>ANTHROPIC_API_KEY</code>、<code>ANTHROPIC_BASE_URL</code>。
+            这使应用可对接官方端点，也可对接兼容网关。
+          </li>
+          <li>
+            <span class="tag">2026-06-27</span>
+            <strong>修正配置加载顺序。</strong>
+            由于默认模型 <code>DEEPAGENT_DEFAULT_MODEL</code> 需要在模块导入时读取，
+            因此将 <code>load_dotenv()</code> 前移到配置模块，避免出现“.env 已填写但默认模型未生效”的问题。
+          </li>
+          <li>
+            <span class="tag">2026-06-27</span>
+            <strong>显式指定 <code>FilesystemBackend(virtual_mode=True)</code>。</strong>
+            用户运行时看到的 warning 来自 deepagents 对默认值即将变化的提醒，而不是 .env 本身出错。
+            当前已显式声明该参数，以稳定路径行为并消除 warning。
+          </li>
+          <li>
+            <span class="tag">2026-06-27</span>
+            <strong>新增 <code>.gitignore</code> 并初始化 Git 仓库。</strong>
+            当前忽略虚拟环境、<code>.env</code>、构建产物、缓存目录及运行生成的归档文件，仅保留 <code>archives/.gitkeep</code>。
+            这样既能保护本地密钥与生成物，又能保持仓库干净可提交。
+          </li>
+          <li>
+            <span class="tag">2026-06-27</span>
+            <strong>准备首个 Git 提交并推送到 GitHub。</strong>
+            这是工程交付层面的变更，不影响产品规格，但会影响版本管理与后续协作方式，因此一并记录。
+          </li>
+        </ul>
+        <div class="note">
+          约定：后续任何会影响规格理解、交互行为、数据结构或安全边界的改动，都应继续追加到本文件。
+        </div>
+      </section>
+    </main>
+  </body>
+  </html>
