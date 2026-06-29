@@ -40,10 +40,40 @@
               <input id="word-input" name="word" type="text" placeholder="例如：serendipity" required />
             </label>
 
+            <div class="field-grid">
+              <label>
+                <span>Provider</span>
+                <select id="provider-select" name="provider">
+                  <option value="anthropic">Anthropic</option>
+                  <option value="openai">OpenAI / Compatible</option>
+                  <option value="google-genai">Google GenAI</option>
+                  <option value="groq">Groq</option>
+                  <option value="ollama">Ollama</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </label>
+
+              <label id="custom-provider-label" class="hidden">
+                <span>自定义 Provider</span>
+                <input id="custom-provider-input" name="custom_provider" type="text" placeholder="例如：xai 或 openrouter" />
+              </label>
+            </div>
+
             <label>
-              <span>模型</span>
-              <input id="model-input" name="model" type="text" placeholder="anthropic:claude-sonnet-4-6" />
+              <span>模型名称</span>
+              <input id="model-name-input" name="model_name" type="text" placeholder="例如：claude-sonnet-4-6" />
             </label>
+
+            <div class="hint-card">
+              <div class="hint-row">
+                <span class="hint-label">实际模型标识</span>
+                <code id="computed-model">—</code>
+              </div>
+              <div class="hint-row">
+                <span class="hint-label">建议 .env 变量</span>
+                <div id="env-hints" class="env-hints"></div>
+              </div>
+            </div>
 
             <label class="toggle">
               <input id="force-refresh" name="force_refresh" type="checkbox" />

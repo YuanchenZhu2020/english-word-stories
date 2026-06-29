@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from functools import lru_cache
 from typing import Any
 
@@ -41,31 +42,36 @@ def _split_model(model: str) -> tuple[str, str]:
     return "", model.strip()
 
 
+def _normalize_provider_env_prefix(provider: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]+", "_", provider.strip().upper()).strip("_")
+
+
+def _provider_env_keys(provider: str, name: str) -> list[str]:
+    keys: list[str] = []
+    normalized_prefix = _normalize_provider_env_prefix(provider)
+    if normalized_prefix:
+        keys.append(f"{normalized_prefix}_{name}")
+    keys.append(f"LLM_{name}")
+    return keys
+
+
 def _resolve_env(provider: str, name: str) -> str | None:
-    provider_key = f"{provider.upper()}_{name}" if provider else ""
-    return (os.getenv(provider_key) if provider_key else None) or os.getenv(f"LLM_{name}")
+    for key in _provider_env_keys(provider, name):
+        value = os.getenv(key)
+        if value:
+            return value
+    return None
 
 
-def _ensure_provider_env(model: str) -> tuple[str, str]:
+def _validate_model(model: str) -> tuple[str, str]:
     provider, model_name = _split_model(model)
-    required_env = {
-        "anthropic": "API_KEY",
-        "openai": "API_KEY",
-        "google": "API_KEY",
-        "google_genai": "API_KEY",
-        "google-genai": "API_KEY",
-    }.get(provider)
-
-    if required_env and not _resolve_env(provider, required_env):
-        explicit = f"{provider.upper()}_{required_env}"
-        raise RuntimeError(
-            f"缺少环境变量 {explicit}（或通用变量 LLM_{required_env}），无法调用模型 {model}。"
-        )
+    if not model_name:
+        raise RuntimeError("模型名称不能为空。请使用 `provider:model_name` 或直接填写模型名。")
     return provider, model_name
 
 
 def build_model(model: str):
-    provider, model_name = _ensure_provider_env(model)
+    provider, model_name = _validate_model(model)
     api_key = _resolve_env(provider, "API_KEY")
     base_url = _resolve_env(provider, "BASE_URL")
 

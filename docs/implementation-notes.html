@@ -74,7 +74,7 @@
         <p><strong>项目：</strong>词源奇旅 / English Word Stories</p>
         <p class="meta">
           此文件用于持续记录实现如何影响规格，或规格如何影响实现。<br />
-          最近更新：2026-06-27
+          最近更新：2026-06-29
         </p>
       </section>
 
@@ -88,6 +88,7 @@
           <li><span class="tag">已决定</span><strong>DeepAgent 从工程内 <code>/skills</code> 目录加载 skill。</strong> 这样 skill 与应用代码一起维护。</li>
           <li><span class="tag">已决定</span><strong>模型连接信息从 <code>.env</code> 读取。</strong> 当前支持 provider 专属变量（如 <code>OPENAI_API_KEY</code>、<code>OPENAI_BASE_URL</code>）以及通用兜底变量（<code>LLM_API_KEY</code>、<code>LLM_BASE_URL</code>）。</li>
           <li><span class="tag">已决定</span><strong><code>FilesystemBackend</code> 显式设置 <code>virtual_mode=True</code>。</strong> 这样可消除 deepagents 的兼容性 warning，并避免依赖默认值变化带来的路径语义风险。</li>
+          <li><span class="tag">已决定</span><strong>新增 provider 采用“通用前缀规范化”方案。</strong> 任何 <code>provider:model</code> 都会优先读取 <code>{PROVIDER}_API_KEY</code> / <code>{PROVIDER}_BASE_URL</code>，其中 provider 会被规范化为大写下划线，如 <code>google-genai</code> → <code>GOOGLE_GENAI</code>。</li>
         </ul>
       </section>
 
@@ -98,6 +99,7 @@
           <li><span class="tag">规格解释</span><strong>“metadata、创建时间等元信息”</strong> 当前至少包含应用名、skill、word、display_word、cache_key、model、created_at、duration_ms、archive_filename。</li>
           <li><span class="tag">可能偏离</span><strong>当前 UI 不是多轮聊天界面。</strong> 它是单词查询工具页，因为规格重点在查询、模型、生成时间与结果展示。</li>
           <li><span class="tag">可能偏离</span><strong>词源内容质量依赖模型。</strong> 代码已接入 DeepAgent，但最终内容深度受所选模型与 API Key 可用性影响。</li>
+          <li><span class="tag">规格解释</span><strong>“显示使用的模型”</strong> 现进一步落实为前端可视化模型配置区：用户不必手写完整的 <code>provider:model</code>，而是通过 provider + model name 组合生成。</li>
         </ul>
       </section>
 
@@ -109,6 +111,8 @@
           <li><span class="tag">方案比较</span><strong>纯 Markdown vs frontmatter + 正文。</strong> 当前选 frontmatter，既可读又易解析。</li>
           <li><span class="tag">方案比较</span><strong>固定模型 vs 自定义模型。</strong> 当前允许输入模型字符串，便于开发和试验。</li>
           <li><span class="tag">方案比较</span><strong>只读 provider 默认环境变量 vs 应用自行封装 .env。</strong> 当前选择在应用侧统一解析环境变量，原因是这样可以支持通用网关变量与 provider 专属变量共存。</li>
+          <li><span class="tag">方案比较</span><strong>维护 provider 白名单 vs 通用规则。</strong> 当前从“半白名单校验”改为“通用前缀规则 + 特殊 provider 定制构造器”，这样新增 provider 时通常无需改后端代码，只需安装对应 LangChain 集成并配置环境变量。</li>
+          <li><span class="tag">方案比较</span><strong>单一自由文本模型输入 vs 结构化 provider/model 输入。</strong> 当前选择“provider 下拉 + model name + custom provider”混合方案，以保留灵活性的同时降低配置错误率。</li>
         </ul>
       </section>
 
@@ -161,6 +165,23 @@
             <span class="tag">2026-06-27</span>
             <strong>准备首个 Git 提交并推送到 GitHub。</strong>
             这是工程交付层面的变更，不影响产品规格，但会影响版本管理与后续协作方式，因此一并记录。
+          </li>
+          <li>
+            <span class="tag">2026-06-29</span>
+            <strong>将 provider 接入改造为通用可扩展实现。</strong>
+            旧实现只对少数 provider 做显式校验；新实现改为统一规范化 provider 前缀并自动读取对应环境变量。
+            这降低了后续接入新 provider 的代码改动频率，但也意味着某些 provider 的“缺少依赖/鉴权失败”将更多由 LangChain/provider SDK 在运行时抛出。
+          </li>
+          <li>
+            <span class="tag">2026-06-29</span>
+            <strong>升级模型配置 UI。</strong>
+            前端从单一模型文本框升级为 provider 下拉 + model name 输入 + 自定义 provider 字段，并实时显示拼接后的模型标识及建议配置的环境变量名。
+            这降低了用户手写 <code>provider:model</code> 时的出错概率，但也引入了一套前端拼接规则，因此需要保证与后端规范化逻辑保持一致。
+          </li>
+          <li>
+            <span class="tag">2026-06-29</span>
+            <strong>为当前工作目录配置 Git safe.directory，并提交/推送本轮改动。</strong>
+            这是为解决本机 Git 的 dubious ownership 检查而采取的环境级修复，不影响产品功能，但会影响本地后续 Git 操作是否可用。
           </li>
         </ul>
         <div class="note">

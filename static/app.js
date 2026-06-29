@@ -1,6 +1,11 @@
 const form = document.getElementById("query-form");
 const wordInput = document.getElementById("word-input");
-const modelInput = document.getElementById("model-input");
+const providerSelect = document.getElementById("provider-select");
+const customProviderLabel = document.getElementById("custom-provider-label");
+const customProviderInput = document.getElementById("custom-provider-input");
+const modelNameInput = document.getElementById("model-name-input");
+const computedModel = document.getElementById("computed-model");
+const envHints = document.getElementById("env-hints");
 const forceRefreshInput = document.getElementById("force-refresh");
 const submitButton = document.getElementById("submit-button");
 const resultTitle = document.getElementById("result-title");
@@ -15,6 +20,63 @@ const metaCache = document.getElementById("meta-cache");
 const metaArchive = document.getElementById("meta-archive");
 
 const refreshArchivesButton = document.getElementById("refresh-archives");
+const KNOWN_PROVIDERS = ["anthropic", "openai", "google-genai", "groq", "ollama"];
+
+function normalizeProviderPrefix(value) {
+  return (value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toUpperCase();
+}
+
+function splitModelIdentifier(model) {
+  if (!model || !model.trim()) {
+    return { provider: "anthropic", modelName: "" };
+  }
+  const value = model.trim();
+  if (!value.includes(":")) {
+    return { provider: "custom", customProvider: "", modelName: value };
+  }
+  const [provider, ...rest] = value.split(":");
+  const normalizedProvider = provider.trim().toLowerCase();
+  const modelName = rest.join(":").trim();
+  if (KNOWN_PROVIDERS.includes(normalizedProvider)) {
+    return { provider: normalizedProvider, modelName };
+  }
+  return { provider: "custom", customProvider: normalizedProvider, modelName };
+}
+
+function getSelectedProvider() {
+  const selected = providerSelect.value;
+  if (selected === "custom") {
+    return customProviderInput.value.trim();
+  }
+  return selected.trim();
+}
+
+function buildModelIdentifier() {
+  const provider = getSelectedProvider();
+  const modelName = modelNameInput.value.trim();
+  if (!provider) return modelName;
+  if (!modelName) return `${provider}:`;
+  return `${provider}:${modelName}`;
+}
+
+function renderEnvHints() {
+  const provider = getSelectedProvider();
+  const prefix = normalizeProviderPrefix(provider);
+  const keys = prefix ? [`${prefix}_API_KEY`, `${prefix}_BASE_URL`, "LLM_API_KEY", "LLM_BASE_URL"] : ["LLM_API_KEY", "LLM_BASE_URL"];
+  envHints.innerHTML = keys.map((key) => `<code>${key}</code>`).join("");
+}
+
+function syncModelControls() {
+  const isCustom = providerSelect.value === "custom";
+  customProviderLabel.classList.toggle("hidden", !isCustom);
+  const modelIdentifier = buildModelIdentifier();
+  computedModel.textContent = modelIdentifier && !modelIdentifier.endsWith(":") ? modelIdentifier : "—";
+  renderEnvHints();
+}
 
 function setStatus(type, label) {
   statusChip.className = `status-chip ${type}`;
@@ -71,6 +133,11 @@ async function loadArchives() {
     `;
     button.addEventListener("click", async () => {
       wordInput.value = item.word;
+      const parsed = splitModelIdentifier(item.model || "");
+      providerSelect.value = parsed.provider;
+      customProviderInput.value = parsed.customProvider || "";
+      modelNameInput.value = parsed.modelName || "";
+      syncModelControls();
       forceRefreshInput.checked = false;
       await submitQuery();
     });
@@ -81,7 +148,11 @@ async function loadArchives() {
 async function loadConfig() {
   const response = await fetch("/api/config");
   const config = await response.json();
-  modelInput.value = config.default_model || "";
+  const parsed = splitModelIdentifier(config.default_model || "");
+  providerSelect.value = parsed.provider;
+  customProviderInput.value = parsed.customProvider || "";
+  modelNameInput.value = parsed.modelName || "";
+  syncModelControls();
   await loadArchives();
 }
 
@@ -90,8 +161,13 @@ async function submitQuery(event) {
   clearError();
 
   const word = wordInput.value.trim();
+  const model = buildModelIdentifier();
   if (!word) {
     showError("请输入要解析的英文单词。");
+    return;
+  }
+  if (!model || model.endsWith(":")) {
+    showError("请选择 provider 并填写模型名称。");
     return;
   }
 
@@ -105,7 +181,7 @@ async function submitQuery(event) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         word,
-        model: modelInput.value.trim(),
+        model,
         force_refresh: forceRefreshInput.checked,
       }),
     });
@@ -126,6 +202,9 @@ async function submitQuery(event) {
 
 form.addEventListener("submit", submitQuery);
 refreshArchivesButton.addEventListener("click", loadArchives);
+providerSelect.addEventListener("change", syncModelControls);
+customProviderInput.addEventListener("input", syncModelControls);
+modelNameInput.addEventListener("input", syncModelControls);
 
 loadConfig().catch((error) => {
   showError(error.message || "初始化失败。");

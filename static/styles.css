@@ -26,7 +26,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -159,9 +160,61 @@ input {
   outline: none;
 }
 
-.query-form input[type="text"]:focus {
+.query-form select {
+  width: 100%;
+  border: 1px solid rgba(96, 73, 40, 0.12);
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: #fffdf8;
+  color: var(--text);
+  outline: none;
+}
+
+.query-form input[type="text"]:focus,
+.query-form select:focus {
   border-color: rgba(155, 107, 53, 0.45);
   box-shadow: 0 0 0 4px rgba(155, 107, 53, 0.08);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.hint-card {
+  border: 1px solid var(--border);
+  background: rgba(255, 252, 246, 0.85);
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hint-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hint-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.env-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.env-hints code,
+.hint-card code {
+  background: rgba(86, 62, 36, 0.08);
+  padding: 6px 10px;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
 }
 
 .toggle {
@@ -321,6 +374,10 @@ input {
 @media (max-width: 720px) {
   .app-shell {
     padding: 16px;
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
   }
 
   .meta-grid {
