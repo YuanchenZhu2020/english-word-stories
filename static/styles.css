@@ -150,6 +150,12 @@ select {
   color: var(--muted);
 }
 
+.word-field span {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .query-form input[type="text"] {
   width: 100%;
   border: 1px solid rgba(96, 73, 40, 0.12);
@@ -158,6 +164,12 @@ select {
   background: #fffdf8;
   color: var(--text);
   outline: none;
+}
+
+.word-field input[type="text"] {
+  padding: 16px 18px;
+  font-size: 18px;
+  border-radius: 18px;
 }
 
 .query-form select {
@@ -182,6 +194,44 @@ select {
   gap: 14px;
 }
 
+.compact-grid {
+  margin-top: 14px;
+}
+
+.compact-span-2 {
+  grid-column: 1 / -1;
+}
+
+.advanced-settings {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 252, 246, 0.62);
+  padding: 10px 14px 14px;
+}
+
+.advanced-settings summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.advanced-settings summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced-settings summary::after {
+  content: "展开";
+  float: right;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.advanced-settings[open] summary::after {
+  content: "收起";
+}
+
 .hint-card {
   border: 1px solid var(--border);
   background: rgba(255, 252, 246, 0.85);
@@ -190,6 +240,11 @@ select {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.compact-hint-card {
+  margin-top: 14px;
+  padding: 12px 14px;
 }
 
 .hint-row {
@@ -378,6 +433,10 @@ select {
 
   .field-grid {
     grid-template-columns: 1fr;
+  }
+
+  .compact-span-2 {
+    grid-column: auto;
   }
 
   .meta-grid {

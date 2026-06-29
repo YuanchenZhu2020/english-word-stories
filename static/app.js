@@ -22,6 +22,13 @@ const metaArchive = document.getElementById("meta-archive");
 const refreshArchivesButton = document.getElementById("refresh-archives");
 const KNOWN_PROVIDERS = ["anthropic", "openai", "google-genai", "groq", "ollama"];
 
+function safeTrimmedValue(element) {
+  if (!element || typeof element.value !== "string") {
+    return "";
+  }
+  return element.value.trim();
+}
+
 function normalizeProviderPrefix(value) {
   return (value || "")
     .trim()
@@ -48,16 +55,16 @@ function splitModelIdentifier(model) {
 }
 
 function getSelectedProvider() {
-  const selected = providerSelect.value;
+  const selected = safeTrimmedValue(providerSelect);
   if (selected === "custom") {
-    return customProviderInput.value.trim();
+    return safeTrimmedValue(customProviderInput);
   }
   return selected.trim();
 }
 
 function buildModelIdentifier() {
   const provider = getSelectedProvider();
-  const modelName = modelNameInput.value.trim();
+  const modelName = safeTrimmedValue(modelNameInput);
   if (!provider) return modelName;
   if (!modelName) return `${provider}:`;
   return `${provider}:${modelName}`;
@@ -67,14 +74,20 @@ function renderEnvHints() {
   const provider = getSelectedProvider();
   const prefix = normalizeProviderPrefix(provider);
   const keys = prefix ? [`${prefix}_API_KEY`, `${prefix}_BASE_URL`, "LLM_API_KEY", "LLM_BASE_URL"] : ["LLM_API_KEY", "LLM_BASE_URL"];
-  envHints.innerHTML = keys.map((key) => `<code>${key}</code>`).join("");
+  if (envHints) {
+    envHints.innerHTML = keys.map((key) => `<code>${key}</code>`).join("");
+  }
 }
 
 function syncModelControls() {
-  const isCustom = providerSelect.value === "custom";
-  customProviderLabel.classList.toggle("hidden", !isCustom);
+  const isCustom = providerSelect?.value === "custom";
+  if (customProviderLabel) {
+    customProviderLabel.classList.toggle("hidden", !isCustom);
+  }
   const modelIdentifier = buildModelIdentifier();
-  computedModel.textContent = modelIdentifier && !modelIdentifier.endsWith(":") ? modelIdentifier : "—";
+  if (computedModel) {
+    computedModel.textContent = modelIdentifier && !modelIdentifier.endsWith(":") ? modelIdentifier : "—";
+  }
   renderEnvHints();
 }
 
@@ -132,13 +145,13 @@ async function loadArchives() {
       <div class="recent-meta">${formatDate(item.created_at)}</div>
     `;
     button.addEventListener("click", async () => {
-      wordInput.value = item.word;
+      if (wordInput) wordInput.value = item.word;
       const parsed = splitModelIdentifier(item.model || "");
-      providerSelect.value = parsed.provider;
-      customProviderInput.value = parsed.customProvider || "";
-      modelNameInput.value = parsed.modelName || "";
+      if (providerSelect) providerSelect.value = parsed.provider;
+      if (customProviderInput) customProviderInput.value = parsed.customProvider || "";
+      if (modelNameInput) modelNameInput.value = parsed.modelName || "";
       syncModelControls();
-      forceRefreshInput.checked = false;
+      if (forceRefreshInput) forceRefreshInput.checked = false;
       await submitQuery();
     });
     recentArchives.appendChild(button);
@@ -149,9 +162,9 @@ async function loadConfig() {
   const response = await fetch("/api/config");
   const config = await response.json();
   const parsed = splitModelIdentifier(config.default_model || "");
-  providerSelect.value = parsed.provider;
-  customProviderInput.value = parsed.customProvider || "";
-  modelNameInput.value = parsed.modelName || "";
+  if (providerSelect) providerSelect.value = parsed.provider;
+  if (customProviderInput) customProviderInput.value = parsed.customProvider || "";
+  if (modelNameInput) modelNameInput.value = parsed.modelName || "";
   syncModelControls();
   await loadArchives();
 }
@@ -160,7 +173,7 @@ async function submitQuery(event) {
   if (event) event.preventDefault();
   clearError();
 
-  const word = wordInput.value.trim();
+  const word = safeTrimmedValue(wordInput);
   const model = buildModelIdentifier();
   if (!word) {
     showError("请输入要解析的英文单词。");
@@ -171,9 +184,9 @@ async function submitQuery(event) {
     return;
   }
 
-  submitButton.disabled = true;
+  if (submitButton) submitButton.disabled = true;
   setStatus("loading", "Working");
-  resultTitle.textContent = `解析中：${word}`;
+  if (resultTitle) resultTitle.textContent = `解析中：${word}`;
 
   try {
     const response = await fetch("/api/query", {
@@ -182,7 +195,7 @@ async function submitQuery(event) {
       body: JSON.stringify({
         word,
         model,
-        force_refresh: forceRefreshInput.checked,
+        force_refresh: !!forceRefreshInput?.checked,
       }),
     });
 
@@ -196,15 +209,15 @@ async function submitQuery(event) {
   } catch (error) {
     showError(error.message || "发生未知错误。");
   } finally {
-    submitButton.disabled = false;
+    if (submitButton) submitButton.disabled = false;
   }
 }
 
-form.addEventListener("submit", submitQuery);
-refreshArchivesButton.addEventListener("click", loadArchives);
-providerSelect.addEventListener("change", syncModelControls);
-customProviderInput.addEventListener("input", syncModelControls);
-modelNameInput.addEventListener("input", syncModelControls);
+if (form) form.addEventListener("submit", submitQuery);
+if (refreshArchivesButton) refreshArchivesButton.addEventListener("click", loadArchives);
+if (providerSelect) providerSelect.addEventListener("change", syncModelControls);
+if (customProviderInput) customProviderInput.addEventListener("input", syncModelControls);
+if (modelNameInput) modelNameInput.addEventListener("input", syncModelControls);
 
 loadConfig().catch((error) => {
   showError(error.message || "初始化失败。");

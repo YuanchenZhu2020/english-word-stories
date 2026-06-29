@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>词源奇旅 / English Word Stories</title>
-    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260629-3" />
   </head>
   <body>
     <div class="app-shell">
@@ -35,45 +35,49 @@
           </div>
 
           <form id="query-form" class="query-form">
-            <label>
+            <label class="word-field">
               <span>英文单词</span>
               <input id="word-input" name="word" type="text" placeholder="例如：serendipity" required />
             </label>
 
-            <div class="field-grid">
-              <label>
-                <span>Provider</span>
-                <select id="provider-select" name="provider">
-                  <option value="anthropic">Anthropic</option>
-                  <option value="openai">OpenAI / Compatible</option>
-                  <option value="google-genai">Google GenAI</option>
-                  <option value="groq">Groq</option>
-                  <option value="ollama">Ollama</option>
-                  <option value="custom">Custom</option>
-                </select>
-              </label>
+            <details class="advanced-settings">
+              <summary>模型设置（高级）</summary>
 
-              <label id="custom-provider-label" class="hidden">
-                <span>自定义 Provider</span>
-                <input id="custom-provider-input" name="custom_provider" type="text" placeholder="例如：xai 或 openrouter" />
-              </label>
-            </div>
+              <div class="field-grid compact-grid">
+                <label>
+                  <span>Provider</span>
+                  <select id="provider-select" name="provider">
+                    <option value="anthropic">Anthropic</option>
+                    <option value="openai">OpenAI / Compatible</option>
+                    <option value="google-genai">Google GenAI</option>
+                    <option value="groq">Groq</option>
+                    <option value="ollama">Ollama</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </label>
 
-            <label>
-              <span>模型名称</span>
-              <input id="model-name-input" name="model_name" type="text" placeholder="例如：claude-sonnet-4-6" />
-            </label>
+                <label>
+                  <span>模型名称</span>
+                  <input id="model-name-input" name="model_name" type="text" placeholder="例如：claude-sonnet-4-6" />
+                </label>
 
-            <div class="hint-card">
-              <div class="hint-row">
-                <span class="hint-label">实际模型标识</span>
-                <code id="computed-model">—</code>
+                <label id="custom-provider-label" class="hidden compact-span-2">
+                  <span>自定义 Provider</span>
+                  <input id="custom-provider-input" name="custom_provider" type="text" placeholder="例如：xai 或 openrouter" />
+                </label>
               </div>
-              <div class="hint-row">
-                <span class="hint-label">建议 .env 变量</span>
-                <div id="env-hints" class="env-hints"></div>
+
+              <div class="hint-card compact-hint-card">
+                <div class="hint-row">
+                  <span class="hint-label">实际模型标识</span>
+                  <code id="computed-model">—</code>
+                </div>
+                <div class="hint-row">
+                  <span class="hint-label">建议 .env 变量</span>
+                  <div id="env-hints" class="env-hints"></div>
+                </div>
               </div>
-            </div>
+            </details>
 
             <label class="toggle">
               <input id="force-refresh" name="force_refresh" type="checkbox" />
@@ -120,6 +124,6 @@
       </main>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js?v=20260629-3"></script>
   </body>
   </html>
